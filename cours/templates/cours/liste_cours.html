@@ -20,14 +20,14 @@
     <main class="container">
         <section class="card">
             <h1>Plateforme de cours en ligne</h1>
-            <p>Le formateur peut creer des categories, des mois et des cours avec PDF depuis cette interface.</p>
+            <p>Les candidats consultent les cours apres inscription et abonnement valide. Les formateurs gerent le contenu depuis leur espace dedie.</p>
             <div class="actions">
-                <a href="/admin/" class="btn">Administration</a>
+                {% if request.user.is_authenticated and request.user.is_staff %}
+                    <a href="{% url 'espace_formateur' %}" class="btn">Espace formateur</a>
+                {% endif %}
+                <a href="/admin/" class="btn-secondary">Administration</a>
                 <a href="{% url 'inscription_candidat' %}" class="btn-secondary">Inscription candidats</a>
                 <a href="{% url 'connexion_candidat' %}" class="btn-secondary">Connexion candidats</a>
-                <a href="{% url 'creer_categorie' %}">Nouvelle categorie</a>
-                <a href="{% url 'creer_mois' %}">Nouveau mois</a>
-                <a href="{% url 'creer_cours' %}">Nouveau cours</a>
             </div>
 
             {% if messages %}

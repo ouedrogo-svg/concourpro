@@ -12,6 +12,9 @@
         <div class="topbar-inner">
             <span class="brand"><span class="emoji">🎓</span>ConCourPro - Candidats</span>
             <div class="top-actions">
+                {% if request.user.is_staff %}
+                    <a href="{% url 'espace_formateur' %}" class="link-muted">Espace formateur</a>
+                {% endif %}
                 <a href="{% url 'profil_candidat' %}" class="link-muted">Mon profil</a>
                 <a href="{% url 'deconnexion_candidat' %}" class="link-muted">Se deconnecter</a>
                 <button id="theme-toggle" class="btn-secondary" type="button">Mode sombre</button>
@@ -21,7 +24,13 @@
     <main class="container">
         <section class="card">
             <h1>Espace Candidats</h1>
-            <p>Bienvenue {{ request.user.first_name|default:request.user.username }}. Consultez les categories, les mois et tous les cours disponibles.</p>
+            <p>
+                Bienvenue {{ request.user.first_name|default:request.user.username }}.
+                Les montants des abonnements (mensuel / annuel) sont definis par l’administrateur dans l’admin Django.
+                Apres avoir choisi une option et clique sur « S’abonner », votre demande est examinee par le formateur :
+                vous n’avez acces aux cours qu’une fois l’abonnement valide.
+                Un abonnement annuel donne acces a tous les cours de la categorie, pour tous les mois.
+            </p>
             {% if messages %}
                 <ul class="messages">
                     {% for message in messages %}
@@ -120,6 +129,12 @@
 
         <section class="card">
             <h2>Abonnement et cours</h2>
+            {% if abonnement_annuel_valide %}
+                <p class="meta" style="margin-top:0;">
+                    Votre abonnement annuel pour <strong>{{ selected_categorie_obj.nom }}</strong> est actif :
+                    vous voyez ci-dessous tous les cours de tous les mois pour cette categorie.
+                </p>
+            {% endif %}
             {% if selected_categorie_obj and selected_mois_obj %}
                 <p>
                     Selection actuelle :
@@ -178,7 +193,7 @@
                             <strong>{{ cours.titre }}</strong>
                             <p class="meta">Categorie: {{ cours.categorie.nom }} | Mois: {{ cours.mois.nom }}</p>
                             {% if cours.description %}<p>{{ cours.description }}</p>{% endif %}
-                            <a href="{{ cours.fichier_pdf.url }}" target="_blank">Ouvrir le support PDF</a>
+                            <a href="{% url 'support_pdf_cours' cours.id %}" target="_blank" rel="noopener">Ouvrir le support PDF</a>
                         </li>
                     {% endfor %}
                 </ul>

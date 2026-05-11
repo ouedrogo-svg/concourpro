@@ -10,9 +10,10 @@
 <body>
     <header class="topbar">
         <div class="topbar-inner">
-            <span class="brand"><span class="emoji">🎓</span>ConCourPro</span>
+            <span class="brand"><span class="emoji">🎓</span>ConCourPro — Formateur</span>
             <div class="top-actions">
-                <a href="{% url 'liste_cours' %}" class="link-muted">Accueil</a>
+                <a href="{% url 'espace_formateur' %}" class="link-muted">Tableau de bord</a>
+                <a href="{% url 'liste_cours' %}" class="link-muted">Site public</a>
                 <button id="theme-toggle" class="btn-secondary" type="button">Mode sombre</button>
             </div>
         </div>
@@ -25,7 +26,7 @@
                 {{ form.as_p }}
                 <button type="submit">Enregistrer</button>
             </form>
-            <p class="back-link"><a href="{% url 'liste_cours' %}" class="link-muted">Retour a la liste</a></p>
+            <p class="back-link"><a href="{% url 'espace_formateur' %}" class="link-muted">Retour a l’espace formateur</a></p>
         </section>
     </main>
     <script>

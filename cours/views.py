@@ -1,9 +1,14 @@
+import os
+from functools import wraps
+
 from django.contrib import messages
 from django.contrib.auth import login, logout
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth import update_session_auth_hash
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
 from django.db.models import Case, IntegerField, Value, When
-from django.shortcuts import redirect, render
+from django.http import FileResponse, Http404
+from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import (
     ChangerMotDePasseForm,
@@ -14,6 +19,39 @@ from .forms import (
     MoisForm,
 )
 from .models import Abonnement, Categorie, Cours, Mois, OptionAbonnement
+
+
+def candidat_a_acces_au_cours(user, cours: Cours) -> bool:
+    """Meme regles que l'espace candidat : abonnement annuel ou mensuel valide."""
+    if user.is_staff:
+        return True
+    annuel = Abonnement.objects.filter(
+        candidat=user,
+        categorie_id=cours.categorie_id,
+        option__type_abonnement=OptionAbonnement.TYPE_ANNUEL,
+        statut=Abonnement.STATUT_VALIDE,
+    ).exists()
+    if annuel:
+        return True
+    return Abonnement.objects.filter(
+        candidat=user,
+        categorie_id=cours.categorie_id,
+        mois_id=cours.mois_id,
+        option__type_abonnement=OptionAbonnement.TYPE_MENSUEL,
+        statut=Abonnement.STATUT_VALIDE,
+    ).exists()
+
+
+def exiger_formateur(view_func):
+    """Connexion obligatoire + compte staff (formateur)."""
+
+    @wraps(view_func)
+    def _wrapped(request, *args, **kwargs):
+        if not request.user.is_staff:
+            raise PermissionDenied
+        return view_func(request, *args, **kwargs)
+
+    return login_required(login_url="connexion_candidat")(_wrapped)
 
 
 def liste_cours(request):
@@ -37,39 +75,42 @@ def liste_cours(request):
     return render(request, "cours/liste_cours.html", context)
 
 
+@exiger_formateur
 def creer_categorie(request):
     if request.method == "POST":
         form = CategorieForm(request.POST)
         if form.is_valid():
             form.save()
             messages.success(request, "Categorie creee avec succes.")
-            return redirect("liste_cours")
+            return redirect("espace_formateur")
     else:
         form = CategorieForm()
 
     return render(request, "cours/formulaire_categorie.html", {"form": form})
 
 
+@exiger_formateur
 def creer_mois(request):
     if request.method == "POST":
         form = MoisForm(request.POST)
         if form.is_valid():
             form.save()
             messages.success(request, "Mois cree avec succes.")
-            return redirect("liste_cours")
+            return redirect("espace_formateur")
     else:
         form = MoisForm()
 
     return render(request, "cours/formulaire_mois.html", {"form": form})
 
 
+@exiger_formateur
 def creer_cours(request):
     if request.method == "POST":
         form = CoursForm(request.POST, request.FILES)
         if form.is_valid():
             form.save()
             messages.success(request, "Cours cree avec succes.")
-            return redirect("liste_cours")
+            return redirect("espace_formateur")
     else:
         form = CoursForm()
 
@@ -95,13 +136,18 @@ def inscription_candidat(request):
 
 def connexion_candidat(request):
     if request.user.is_authenticated:
+        if request.user.is_staff:
+            return redirect("espace_formateur")
         return redirect("espace_candidats")
 
     if request.method == "POST":
         form = ConnexionCandidatForm(request, data=request.POST)
         if form.is_valid():
-            login(request, form.get_user())
+            user = form.get_user()
+            login(request, user)
             messages.success(request, "Connexion reussie.")
+            if user.is_staff:
+                return redirect("espace_formateur")
             return redirect("espace_candidats")
     else:
         form = ConnexionCandidatForm(request)
@@ -133,6 +179,32 @@ def changer_mot_de_passe(request):
         form = ChangerMotDePasseForm(request.user)
 
     return render(request, "cours/changer_mot_de_passe.html", {"form": form})
+
+
+@login_required(login_url="connexion_candidat")
+def support_pdf_cours(request, cours_id):
+    """
+    Sert le PDF via Django (fonctionne sans exposition directe de /media/ en production).
+    Acces reserve aux candidats avec abonnement valide (memes regles que la liste des cours).
+    """
+    cours = get_object_or_404(
+        Cours.objects.select_related("categorie", "mois"), pk=cours_id
+    )
+    if not candidat_a_acces_au_cours(request.user, cours):
+        raise PermissionDenied
+    if not cours.fichier_pdf or not cours.fichier_pdf.name:
+        raise Http404("Aucun fichier PDF pour ce cours.")
+    try:
+        fichier = cours.fichier_pdf.open("rb")
+    except (FileNotFoundError, OSError, ValueError):
+        raise Http404("Le fichier PDF est introuvable sur le serveur.")
+    nom_fichier = os.path.basename(cours.fichier_pdf.name) or "support.pdf"
+    return FileResponse(
+        fichier,
+        as_attachment=False,
+        filename=nom_fichier,
+        content_type="application/pdf",
+    )
 
 
 @login_required(login_url="connexion_candidat")
@@ -248,11 +320,10 @@ def espace_candidats(request):
 
         if abonnement_annuel_valide:
             abonnement_actif = True
+            # Abonnement annuel : acces a tous les cours de la categorie, tous les mois.
             cours_queryset = Cours.objects.select_related("categorie", "mois").filter(
                 categorie_id=categorie_id
             )
-            if mois_id:
-                cours_queryset = cours_queryset.filter(mois_id=mois_id)
         elif mois_id and abonnement_mensuel_valide:
             abonnement_actif = True
             cours_queryset = Cours.objects.select_related("categorie", "mois").filter(
@@ -284,5 +355,72 @@ def espace_candidats(request):
         "selected_mois_obj": selected_mois_obj,
         "abonnement_actif": abonnement_actif,
         "message_abonnement": message_abonnement,
+        "abonnement_annuel_valide": abonnement_annuel_valide,
     }
     return render(request, "cours/espace_candidats.html", context)
+
+
+@exiger_formateur
+def espace_formateur(request):
+    """Tableau de bord : contenu pedagogique et validation des abonnements."""
+    nb_attente = Abonnement.objects.filter(
+        statut=Abonnement.STATUT_EN_ATTENTE
+    ).count()
+    return render(
+        request,
+        "cours/espace_formateur.html",
+        {
+            "nb_abonnements_attente": nb_attente,
+            "nb_categories": Categorie.objects.count(),
+            "nb_mois": Mois.objects.count(),
+            "nb_cours": Cours.objects.count(),
+        },
+    )
+
+
+@exiger_formateur
+def abonnements_formateur(request):
+    """Validation des abonnements par un compte formateur (is_staff)."""
+    if request.method == "POST":
+        abonnement_id = request.POST.get("abonnement_id")
+        action = request.POST.get("action")
+        abonnement = get_object_or_404(Abonnement, pk=abonnement_id)
+        if action == "valider":
+            abonnement.statut = Abonnement.STATUT_VALIDE
+            abonnement.save(update_fields=["statut"])
+            messages.success(
+                request,
+                f"Abonnement valide pour {abonnement.candidat.get_username()} — "
+                f"{abonnement.categorie.nom}.",
+            )
+        elif action == "rejeter":
+            abonnement.statut = Abonnement.STATUT_REJETE
+            abonnement.save(update_fields=["statut"])
+            messages.info(
+                request,
+                f"Abonnement refuse pour {abonnement.candidat.get_username()} — "
+                f"{abonnement.categorie.nom}.",
+            )
+        else:
+            messages.error(request, "Action non reconnue.")
+        return redirect("abonnements_formateur")
+
+    en_attente = (
+        Abonnement.objects.select_related(
+            "candidat", "categorie", "mois", "option"
+        )
+        .filter(statut=Abonnement.STATUT_EN_ATTENTE)
+        .order_by("date_abonnement")
+    )
+    recents = (
+        Abonnement.objects.select_related(
+            "candidat", "categorie", "mois", "option"
+        )
+        .exclude(statut=Abonnement.STATUT_EN_ATTENTE)
+        .order_by("-date_abonnement")[:30]
+    )
+    return render(
+        request,
+        "cours/abonnements_formateur.html",
+        {"en_attente": en_attente, "recents": recents},
+    )

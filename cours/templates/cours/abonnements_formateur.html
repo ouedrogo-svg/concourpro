@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Abonnements — Formateur</title>
+    <link rel="stylesheet" href="{% static 'cours/styles.css' %}">
+</head>
+<body>
+    <header class="topbar">
+        <div class="topbar-inner">
+            <span class="brand"><span class="emoji">📋</span>ConCourPro — Formateur</span>
+            <div class="top-actions">
+                <a href="{% url 'espace_formateur' %}" class="link-muted">Tableau de bord</a>
+                <a href="{% url 'liste_cours' %}" class="link-muted">Site public</a>
+                <a href="{% url 'espace_candidats' %}" class="link-muted">Espace candidats</a>
+                <a href="{% url 'deconnexion_candidat' %}" class="link-muted">Se deconnecter</a>
+                <a href="{% url 'admin:index' %}" class="link-muted">Admin Django</a>
+            </div>
+        </div>
+    </header>
+    <main class="container">
+        <section class="card">
+            <h1>Validation des abonnements</h1>
+            <p class="meta">
+                Validez ou refusez les demandes. Le candidat n’a accès aux cours qu’après validation.
+                Les options (mensuel / annuel et montants) sont configurées dans l’administration Django.
+            </p>
+            {% if messages %}
+                <ul class="messages">
+                    {% for message in messages %}
+                        <li>{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </section>
+
+        <section class="card">
+            <h2>Demandes en attente</h2>
+            {% if en_attente %}
+                <ul class="simple-list">
+                    {% for ab in en_attente %}
+                        <li class="abonnement-item formateur-ab-row">
+                            <div>
+                                <strong>{{ ab.candidat.get_username }}</strong>
+                                {% if ab.candidat.first_name %}
+                                    <span class="meta">({{ ab.candidat.first_name }})</span>
+                                {% endif %}
+                                <br>
+                                <span class="meta">Catégorie : {{ ab.categorie.nom }}</span>
+                                {% if ab.option %}
+                                    <span class="meta"> — {{ ab.option.get_type_abonnement_display }} — {{ ab.montant }} FCFA</span>
+                                {% endif %}
+                                <br>
+                                <span class="meta">
+                                    {% if ab.mois %}Mois : {{ ab.mois.nom }}{% else %}Période : tous les mois (abonnement annuel){% endif %}
+                                </span>
+                                <br>
+                                <span class="meta">Demandé le {{ ab.date_abonnement|date:"d/m/Y H:i" }}</span>
+                            </div>
+                            <div class="formateur-ab-actions">
+                                <form method="post" class="inline-form">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="abonnement_id" value="{{ ab.id }}">
+                                    <input type="hidden" name="action" value="valider">
+                                    <button type="submit" class="btn-success">Valider</button>
+                                </form>
+                                <form method="post" class="inline-form">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="abonnement_id" value="{{ ab.id }}">
+                                    <input type="hidden" name="action" value="rejeter">
+                                    <button type="submit" class="btn-danger">Refuser</button>
+                                </form>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>Aucune demande en attente.</p>
+            {% endif %}
+        </section>
+
+        <section class="card">
+            <h2>Dernières décisions</h2>
+            {% if recents %}
+                <ul class="simple-list">
+                    {% for ab in recents %}
+                        <li class="abonnement-item">
+                            <strong>{{ ab.candidat.get_username }}</strong>
+                            — {{ ab.categorie.nom }}
+                            {% if ab.option %}— {{ ab.option.get_type_abonnement_display }}{% endif %}
+                            {% if ab.mois %}— {{ ab.mois.nom }}{% else %}— tous les mois{% endif %}
+                            <span class="badge-statut badge-{{ ab.statut }}">{{ ab.get_statut_display }}</span>
+                            <span class="meta">{{ ab.date_abonnement|date:"d/m/Y" }}</span>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="meta">Aucun historique récent.</p>
+            {% endif %}
+        </section>
+    </main>
+</body>
+</html>
