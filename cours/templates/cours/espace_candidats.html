@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Espace Candidats</title>
+    <link rel="stylesheet" href="{% static 'cours/styles.css' %}">
+</head>
+<body>
+    <header class="topbar">
+        <div class="topbar-inner">
+            <span class="brand"><span class="emoji">🎓</span>ConCourPro - Candidats</span>
+            <div class="top-actions">
+                <a href="{% url 'profil_candidat' %}" class="link-muted">Mon profil</a>
+                <a href="{% url 'deconnexion_candidat' %}" class="link-muted">Se deconnecter</a>
+                <button id="theme-toggle" class="btn-secondary" type="button">Mode sombre</button>
+            </div>
+        </div>
+    </header>
+    <main class="container">
+        <section class="card">
+            <h1>Espace Candidats</h1>
+            <p>Bienvenue {{ request.user.first_name|default:request.user.username }}. Consultez les categories, les mois et tous les cours disponibles.</p>
+            {% if messages %}
+                <ul class="messages">
+                    {% for message in messages %}
+                        <li>{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </section>
+
+        <section class="card">
+            <h2>Filtrer les cours</h2>
+            <form method="get" class="filter-grid" id="filtre-candidat-form">
+                <div>
+                    <label for="categorie">Categorie :</label>
+                    <select name="categorie" id="categorie">
+                        <option value="">Toutes</option>
+                        {% for categorie in categories %}
+                            <option value="{{ categorie.id }}" {% if selected_categorie == categorie.id|stringformat:"s" %}selected{% endif %}>
+                                {{ categorie.nom }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="mois">Mois :</label>
+                    <select name="mois" id="mois">
+                        <option value="">Tous</option>
+                        {% for mois in mois_list %}
+                            <option value="{{ mois.id }}" {% if selected_mois == mois.id|stringformat:"s" %}selected{% endif %}>
+                                {{ mois.nom }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="actions">
+                    <button type="submit">Filtrer</button>
+                    <a href="{% url 'espace_candidats' %}" class="link-muted">Reinitialiser</a>
+                </div>
+            </form>
+        </section>
+
+        <section class="card">
+            <h2>Categories disponibles</h2>
+            <ul class="simple-list">
+                {% for categorie in categories %}
+                    <li>{{ categorie.nom }}</li>
+                {% empty %}
+                    <li>Aucune categorie disponible.</li>
+                {% endfor %}
+            </ul>
+        </section>
+
+        <section class="card">
+            <h2>Mois disponibles</h2>
+            <ul class="simple-list">
+                {% for mois in mois_list %}
+                    <li>{{ mois.nom }}</li>
+                {% empty %}
+                    <li>Aucun mois disponible.</li>
+                {% endfor %}
+            </ul>
+        </section>
+
+        <section class="card">
+            <h2>Mes abonnements</h2>
+            {% if mes_abonnements %}
+                <ul class="simple-list">
+                    {% for abonnement in mes_abonnements %}
+                        <li class="abonnement-item">
+                            <strong>{{ abonnement.categorie.nom }}</strong>
+                            <span>
+                                {% if abonnement.option %}
+                                    - {{ abonnement.option.get_type_abonnement_display }}
+                                {% else %}
+                                    - Option non definie
+                                {% endif %}
+                            </span>
+                            <span>- {{ abonnement.montant }} FCFA</span>
+                            <span>
+                                {% if abonnement.mois %}
+                                    - {{ abonnement.mois.nom }}
+                                {% else %}
+                                    - Tous les mois
+                                {% endif %}
+                            </span>
+                            <span class="badge-statut badge-{{ abonnement.statut }}">
+                                {{ abonnement.get_statut_display }}
+                            </span>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>Vous n'avez encore aucun abonnement.</p>
+            {% endif %}
+        </section>
+
+        <section class="card">
+            <h2>Abonnement et cours</h2>
+            {% if selected_categorie_obj and selected_mois_obj %}
+                <p>
+                    Selection actuelle :
+                    <strong>{{ selected_categorie_obj.nom }}</strong> -
+                    <strong>{{ selected_mois_obj.nom }}</strong>
+                </p>
+            {% elif selected_categorie_obj %}
+                <p>
+                    Categorie selectionnee :
+                    <strong>{{ selected_categorie_obj.nom }}</strong>
+                </p>
+            {% endif %}
+
+            {% if message_abonnement %}
+                <p>{{ message_abonnement }}</p>
+            {% endif %}
+
+            {% if not abonnement_actif and selected_categorie %}
+                <form method="post" id="abonnement-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="categorie" value="{{ selected_categorie }}">
+                    <input type="hidden" id="abonnement-mois-hidden" name="mois" value="{{ selected_mois }}">
+
+                    <div>
+                        <label for="option">Option d'abonnement :</label>
+                        <select id="option" name="option" required>
+                            <option value="">Selectionnez une option</option>
+                            {% for option in options_abonnement %}
+                                <option
+                                    value="{{ option.id }}"
+                                    data-type="{{ option.type_abonnement }}"
+                                    data-montant="{{ option.montant }}"
+                                >
+                                    {{ option.get_type_abonnement_display }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="montant-affiche">Montant :</label>
+                        <input id="montant-affiche" type="text" value="Selectionnez une option" readonly>
+                    </div>
+
+                    <p id="mensuel-info" class="meta" style="display:none;">
+                        Pour l'option mensuelle, choisissez aussi un mois dans le filtre.
+                    </p>
+                    <button type="submit">S'abonner</button>
+                </form>
+            {% endif %}
+
+            {% if abonnement_actif and cours_list %}
+                <ul class="course-list">
+                    {% for cours in cours_list %}
+                        <li class="course-item">
+                            <strong>{{ cours.titre }}</strong>
+                            <p class="meta">Categorie: {{ cours.categorie.nom }} | Mois: {{ cours.mois.nom }}</p>
+                            {% if cours.description %}<p>{{ cours.description }}</p>{% endif %}
+                            <a href="{{ cours.fichier_pdf.url }}" target="_blank">Ouvrir le support PDF</a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% elif abonnement_actif %}
+                <p>Aucun cours disponible pour ce filtre.</p>
+            {% endif %}
+        </section>
+    </main>
+    <script>
+        const filtreForm = document.getElementById("filtre-candidat-form");
+        const categorieSelect = document.getElementById("categorie");
+        const moisSelect = document.getElementById("mois");
+        const abonnementMoisHidden = document.getElementById("abonnement-mois-hidden");
+        const optionSelect = document.getElementById("option");
+        const montantAffiche = document.getElementById("montant-affiche");
+        const mensuelInfo = document.getElementById("mensuel-info");
+
+        function autoFiltrer() {
+            if (abonnementMoisHidden) {
+                abonnementMoisHidden.value = moisSelect.value;
+            }
+            if (categorieSelect.value && moisSelect.value) {
+                filtreForm.submit();
+            }
+        }
+
+        categorieSelect.addEventListener("change", autoFiltrer);
+        moisSelect.addEventListener("change", autoFiltrer);
+
+        if (optionSelect && montantAffiche) {
+            optionSelect.addEventListener("change", () => {
+                const selected = optionSelect.options[optionSelect.selectedIndex];
+                const montant = selected.dataset.montant;
+                const type = selected.dataset.type;
+                if (montant) {
+                    montantAffiche.value = `${montant} FCFA`;
+                } else {
+                    montantAffiche.value = "Selectionnez une option";
+                }
+                if (mensuelInfo) {
+                    mensuelInfo.style.display = type === "mensuel" ? "block" : "none";
+                }
+            });
+        }
+
+        const toggleButton = document.getElementById("theme-toggle");
+        const savedTheme = localStorage.getItem("theme");
+        if (savedTheme === "dark") {
+            document.documentElement.setAttribute("data-theme", "dark");
+            toggleButton.textContent = "Mode clair";
+        }
+        toggleButton.addEventListener("click", () => {
+            const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+            if (isDark) {
+                document.documentElement.removeAttribute("data-theme");
+                localStorage.setItem("theme", "light");
+                toggleButton.textContent = "Mode sombre";
+            } else {
+                document.documentElement.setAttribute("data-theme", "dark");
+                localStorage.setItem("theme", "dark");
+                toggleButton.textContent = "Mode clair";
+            }
+        });
+    </script>
+</body>
+</html>

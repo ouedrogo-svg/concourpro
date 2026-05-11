@@ -1,0 +1,276 @@
+:root {
+    --bg: #f3f6fb;
+    --card: #ffffff;
+    --card-soft: #f8fbff;
+    --text: #1f2937;
+    --muted: #6b7280;
+    --primary: #2563eb;
+    --primary-dark: #1d4ed8;
+    --border: #e5e7eb;
+    --success-bg: #ecfdf5;
+    --success-text: #047857;
+}
+
+[data-theme="dark"] {
+    --bg: #0b1220;
+    --card: #111a2e;
+    --card-soft: #16223b;
+    --text: #e5e7eb;
+    --muted: #9ca3af;
+    --primary: #60a5fa;
+    --primary-dark: #3b82f6;
+    --border: #22314f;
+    --success-bg: #0b2f24;
+    --success-text: #6ee7b7;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: linear-gradient(180deg, #eff4ff 0%, var(--bg) 40%);
+    color: var(--text);
+}
+
+.topbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: color-mix(in srgb, var(--card) 92%, transparent);
+    border-bottom: 1px solid var(--border);
+    backdrop-filter: blur(8px);
+}
+
+.topbar-inner {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.brand {
+    font-weight: 700;
+    color: var(--text);
+}
+
+.top-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.container {
+    max-width: 980px;
+    margin: 26px auto 36px;
+    padding: 0 16px;
+}
+
+.card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+    margin-bottom: 18px;
+}
+
+h1, h2 {
+    margin-top: 0;
+}
+
+h1 {
+    margin-bottom: 8px;
+}
+
+p {
+    color: var(--muted);
+}
+
+a {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+a:hover {
+    color: var(--primary-dark);
+}
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 14px 0;
+}
+
+.messages {
+    list-style: none;
+    padding: 0;
+    margin: 12px 0 0;
+}
+
+.messages li {
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: var(--success-bg);
+    color: var(--success-text);
+    border: 1px solid #a7f3d0;
+}
+
+form {
+    display: grid;
+    gap: 12px;
+}
+
+form p {
+    margin: 0;
+    display: grid;
+    gap: 6px;
+}
+
+label {
+    font-weight: 600;
+    color: #374151;
+}
+
+input, select, textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 14px;
+    background: #fff;
+}
+
+input:focus, select:focus, textarea:focus {
+    outline: 2px solid #bfdbfe;
+    border-color: #93c5fd;
+}
+
+.filter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+    align-items: end;
+}
+
+button, .btn {
+    display: inline-block;
+    background: var(--primary);
+    border: none;
+    color: white;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+button:hover, .btn:hover {
+    background: var(--primary-dark);
+    color: white;
+}
+
+.btn-secondary {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+}
+
+.btn-secondary:hover {
+    background: var(--card-soft);
+    color: var(--text);
+}
+
+.link-muted {
+    font-weight: 500;
+    color: var(--muted);
+}
+
+.course-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 12px;
+}
+
+.simple-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 8px;
+}
+
+.simple-list li {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    background: var(--card-soft);
+}
+
+.abonnement-item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.badge-statut {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.badge-en_attente {
+    background: #fff7ed;
+    color: #c2410c;
+    border: 1px solid #fed7aa;
+}
+
+.badge-valide {
+    background: #ecfdf5;
+    color: #047857;
+    border: 1px solid #a7f3d0;
+}
+
+.badge-rejete {
+    background: #fef2f2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+}
+
+.course-item {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    background: var(--card-soft);
+}
+
+.meta {
+    color: var(--muted);
+    margin: 6px 0;
+}
+
+.back-link {
+    margin-top: 14px;
+}
+
+.emoji {
+    margin-right: 6px;
+}
+
+@media (max-width: 640px) {
+    .topbar-inner {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}

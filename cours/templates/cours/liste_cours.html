@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cours en ligne</title>
+    <link rel="stylesheet" href="{% static 'cours/styles.css' %}">
+</head>
+<body>
+    <header class="topbar">
+        <div class="topbar-inner">
+            <span class="brand"><span class="emoji">🎓</span>ConCourPro</span>
+            <div class="top-actions">
+                <a href="/" class="link-muted">Accueil</a>
+                <button id="theme-toggle" class="btn-secondary" type="button">Mode sombre</button>
+            </div>
+        </div>
+    </header>
+    <main class="container">
+        <section class="card">
+            <h1>Plateforme de cours en ligne</h1>
+            <p>Le formateur peut creer des categories, des mois et des cours avec PDF depuis cette interface.</p>
+            <div class="actions">
+                <a href="/admin/" class="btn">Administration</a>
+                <a href="{% url 'inscription_candidat' %}" class="btn-secondary">Inscription candidats</a>
+                <a href="{% url 'connexion_candidat' %}" class="btn-secondary">Connexion candidats</a>
+                <a href="{% url 'creer_categorie' %}">Nouvelle categorie</a>
+                <a href="{% url 'creer_mois' %}">Nouveau mois</a>
+                <a href="{% url 'creer_cours' %}">Nouveau cours</a>
+            </div>
+
+            {% if messages %}
+                <ul class="messages">
+                    {% for message in messages %}
+                        <li>{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </section>
+
+        <section class="card">
+            <h2>Liste des cours disponibles</h2>
+            <form method="get" class="filter-grid">
+                <div>
+                    <label for="categorie">Categorie :</label>
+                    <select name="categorie" id="categorie">
+                        <option value="">Toutes</option>
+                        {% for categorie in categories %}
+                            <option value="{{ categorie.id }}" {% if selected_categorie == categorie.id|stringformat:"s" %}selected{% endif %}>
+                                {{ categorie.nom }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label for="mois">Mois :</label>
+                    <select name="mois" id="mois">
+                        <option value="">Tous</option>
+                        {% for mois in mois_list %}
+                            <option value="{{ mois.id }}" {% if selected_mois == mois.id|stringformat:"s" %}selected{% endif %}>
+                                {{ mois.nom }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="actions">
+                    <button type="submit">Filtrer</button>
+                    <a href="{% url 'liste_cours' %}" class="link-muted">Reinitialiser</a>
+                </div>
+            </form>
+
+            {% if cours_list %}
+                <ul class="course-list">
+                    {% for cours in cours_list %}
+                        <li class="course-item">
+                            <strong>{{ cours.titre }}</strong>
+                            <p class="meta">Categorie: {{ cours.categorie.nom }} | Mois: {{ cours.mois.nom }}</p>
+                            {% if cours.description %}<p>{{ cours.description }}</p>{% endif %}
+                            <a href="{{ cours.fichier_pdf.url }}" target="_blank">Voir le PDF</a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>Aucun cours n'est encore publie.</p>
+            {% endif %}
+        </section>
+    </main>
+    <script>
+        const toggleButton = document.getElementById("theme-toggle");
+        const savedTheme = localStorage.getItem("theme");
+        if (savedTheme === "dark") {
+            document.documentElement.setAttribute("data-theme", "dark");
+            toggleButton.textContent = "Mode clair";
+        }
+        toggleButton.addEventListener("click", () => {
+            const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+            if (isDark) {
+                document.documentElement.removeAttribute("data-theme");
+                localStorage.setItem("theme", "light");
+                toggleButton.textContent = "Mode sombre";
+            } else {
+                document.documentElement.setAttribute("data-theme", "dark");
+                localStorage.setItem("theme", "dark");
+                toggleButton.textContent = "Mode clair";
+            }
+        });
+    </script>
+</body>
+</html>
