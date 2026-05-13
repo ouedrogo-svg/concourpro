@@ -628,24 +628,29 @@ button:hover, .btn:hover {
 
 .quiz-option {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 10px;
     cursor: pointer;
     line-height: 1.45;
+    min-width: 0;
 }
 
 .quiz-option-proposition {
     flex-direction: row;
-    align-items: flex-start;
-    padding: 8px 10px;
+    align-items: center;
+    padding: 10px 12px;
     border-radius: 8px;
     border: 1px solid var(--border, #e2e8f0);
     background: var(--surface-2, rgba(0, 0, 0, 0.02));
 }
 
 .quiz-option-proposition input[type="checkbox"] {
-    margin-top: 5px;
+    margin-top: 0;
+    margin-right: 10px;
     flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    accent-color: var(--primary);
 }
 
 .quiz-prop-inline {
