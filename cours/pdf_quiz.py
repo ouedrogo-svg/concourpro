@@ -357,9 +357,28 @@ def _iter_rows_from_table(
             table, header, header_norm, idx_q, idx_r, carry, prior_rows, data_start_row=1
         )
 
+    def _index_first_data_row(rows: List[List[Optional[str]]]) -> int:
+        for i, raw in enumerate(rows):
+            if not raw:
+                continue
+            first = _clean_cell(raw[0])
+            if not first or not first.isdigit():
+                continue
+            last = _clean_cell(raw[-1])
+            if re.fullmatch(r"[A-Za-z]{1,6}", last):
+                return i
+        return 0
+
+    first_data_row = _index_first_data_row(table)
     header_raw = table[0] or []
     ncols0 = len(header_raw)
     cells0 = _row_cells(header_raw, ncols0)
+
+    if first_data_row > 0:
+        table = table[first_data_row:]
+        header_raw = table[0] or []
+        ncols0 = len(header_raw)
+        cells0 = _row_cells(header_raw, ncols0)
 
     def _synth_header_for_ncols(ncols: int) -> List[str]:
         if ncols < 3:
