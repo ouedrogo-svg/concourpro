@@ -28,11 +28,26 @@
     box-sizing: border-box;
 }
 
+html, body {
+    min-height: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
 body {
     margin: 0;
     font-family: "Segoe UI", Arial, sans-serif;
     background: linear-gradient(180deg, #eff4ff 0%, var(--bg) 40%);
     color: var(--text);
+}
+
+img,
+iframe,
+object,
+embed,
+video {
+    max-width: 100%;
+    height: auto;
 }
 
 .topbar {
@@ -296,6 +311,115 @@ button:hover, .btn:hover {
 
 .back-link {
     margin-top: 14px;
+}
+
+.formateur-ab-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.formateur-tile {
+    display: block;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    background: var(--card);
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.formateur-tile:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+}
+
+.formateur-tile-title {
+    font-weight: 700;
+    display: block;
+    margin-bottom: 6px;
+}
+
+.formateur-tile-meta {
+    color: var(--muted);
+}
+
+@media (max-width: 760px) {
+    .topbar-inner,
+    .container {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+
+    .topbar-inner {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .top-actions {
+        justify-content: flex-start;
+        flex-wrap: wrap;
+        width: 100%;
+        gap: 8px;
+    }
+
+    .top-actions a,
+    .top-actions button {
+        width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+    }
+
+    .actions,
+    .formateur-actions,
+    .formateur-ab-actions {
+        flex-direction: column;
+    }
+
+    .course-item,
+    .abonnement-item,
+    .simple-list li,
+    .formateur-tile {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .abonnement-item {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .abonnement-item > div,
+    .formateur-ab-actions,
+    .formateur-actions,
+    .top-actions,
+    .filter-grid,
+    .card,
+    .container {
+        min-width: 0;
+    }
+
+    .pdf-reader iframe,
+    .pdf-object {
+        min-height: 260px;
+    }
+
+    button,
+    .btn,
+    .btn-secondary,
+    .formateur-tile {
+        width: 100%;
+    }
+
+    .filter-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .quiz-q-row {
+        grid-template-columns: 1fr;
+    }
 }
 
 .emoji {
