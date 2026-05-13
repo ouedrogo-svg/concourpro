@@ -6,6 +6,48 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quiz — {{ correction.titre }}</title>
     <link rel="stylesheet" href="{% static 'cours/styles.css' %}">
+    <style>
+        .quiz-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            line-height: 1.45;
+            min-width: 0;
+        }
+
+        .quiz-option-proposition {
+            flex-direction: row;
+            align-items: center;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border, #e2e8f0);
+            background: var(--surface-2, rgba(0, 0, 0, 0.02));
+        }
+
+        .quiz-option-proposition input[type="checkbox"] {
+            margin-top: 0;
+            margin-right: 10px;
+            flex-shrink: 0;
+            width: 20px;
+            height: 20px;
+            accent-color: var(--primary);
+        }
+
+        .quiz-prop-inline {
+            display: block;
+            min-width: 0;
+            flex: 1;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+        }
+
+        @media (max-width: 760px) {
+            .quiz-q-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 <body>
     <header class="topbar">
