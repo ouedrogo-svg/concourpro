@@ -299,15 +299,18 @@ def _rows_from_questions_reponses_table(
 
 def _first_row_looks_like_continuation(cells: List[str]) -> bool:
     """Tableau sans en-tete : 1re ligne = suite d'une question (souvent 'C) ...')."""
-    if not cells or len(cells) < 3:
+    if not cells or len(cells) < 2:
         return False
     if cells[0].strip():
         return False
-    t = (cells[2] if len(cells) > 2 else "").strip()
-    if re.match(r"^\s*[A-Z]\)\s*", t, re.IGNORECASE):
-        return True
-    if re.match(r"^\s*[A-Z]\.\s+", t, re.IGNORECASE):
-        return True
+    for cell in cells[1:]:
+        t = (cell or "").strip()
+        if not t:
+            continue
+        if re.match(r"^\s*[A-Z]\)\s*", t, re.IGNORECASE):
+            return True
+        if re.match(r"^\s*[A-Z]\.\s+", t, re.IGNORECASE):
+            return True
     return False
 
 
@@ -357,23 +360,45 @@ def _iter_rows_from_table(
     header_raw = table[0] or []
     ncols0 = len(header_raw)
     cells0 = _row_cells(header_raw, ncols0)
+
+    def _synth_header_for_ncols(ncols: int) -> List[str]:
+        if ncols < 3:
+            return []
+        return ["Ordre", "Questions"] + [""] * (ncols - 3) + ["Réponses"]
+
     if (
         prior_rows
-        and ncols0 >= 4
+        and ncols0 >= 3
         and _first_row_looks_like_continuation(cells0)
     ):
-        synth_header = ["Ordre", "Questions", "", "", "Réponses"]
+        synth_header = _synth_header_for_ncols(ncols0)
         synth_norm = [_norm(h) for h in synth_header]
         return _rows_from_questions_reponses_table(
             table,
             synth_header,
             synth_norm,
             1,
-            4,
+            ncols0 - 1,
             carry,
             prior_rows,
             data_start_row=0,
         )
+
+    if ncols0 >= 3 and cells0[0].isdigit():
+        last = cells0[-1].strip()
+        if re.fullmatch(r"[A-Za-z]{1,6}", last):
+            synth_header = _synth_header_for_ncols(ncols0)
+            synth_norm = [_norm(h) for h in synth_header]
+            return _rows_from_questions_reponses_table(
+                table,
+                synth_header,
+                synth_norm,
+                1,
+                ncols0 - 1,
+                carry,
+                prior_rows,
+                data_start_row=0,
+            )
 
     # Fallback: 2 premieres colonnes = question + reponse, sans propositions structurees.
     rows_fallback: List[QuizRow] = []
@@ -593,35 +618,47 @@ def extract_quiz_rows_from_pdf(pdf_path: str) -> Tuple[List[QuizRow], List[str]]
     unique: List[QuizRow] = []
     try:
         with pdfplumber.open(pdf_path) as pdf:
+            best_rows: List[QuizRow] = []
             for ts in _TABLE_STRATEGIES:
                 rows: List[QuizRow] = []
                 inter_table_carry: List[str] = []
-                for page in pdf.pages:
-                    page_had_rows = False
-                    try:
-                        if ts is None:
-                            tables = page.extract_tables() or []
-                        else:
-                            tables = page.extract_tables(table_settings=ts) or []
-                    except Exception:
-                        tables = []
-                    for t in tables:
-                        part = _iter_rows_from_table(t, inter_table_carry, rows)
-                        if inter_table_carry and rows:
-                            _merge_carry_into_last_row(rows, inter_table_carry)
-                        rows.extend(part)
-                        page_had_rows = page_had_rows or bool(part)
-
-                    if not page_had_rows:
+                fallback_rows: List[QuizRow] = []
+                for ts in _TABLE_STRATEGIES:
+                    rows: List[QuizRow] = []
+                    inter_table_carry: List[str] = []
+                    for page in pdf.pages:
+                        page_had_rows = False
                         try:
-                            text = page.extract_text() or ""
+                            if ts is None:
+                                tables = page.extract_tables() or []
+                            else:
+                                tables = page.extract_tables(table_settings=ts) or []
                         except Exception:
-                            text = ""
-                        rows.extend(list(_iter_rows_from_text(text)))
+                            tables = []
+                        for t in tables:
+                            part = _iter_rows_from_table(t, inter_table_carry, rows)
+                            if inter_table_carry and rows:
+                                _merge_carry_into_last_row(rows, inter_table_carry)
+                            rows.extend(part)
+                            page_had_rows = page_had_rows or bool(part)
 
-                unique = _dedupe_quiz_rows(rows)
-                if unique:
-                    break
+                        if not page_had_rows:
+                            try:
+                                text = page.extract_text() or ""
+                            except Exception:
+                                text = ""
+                            rows.extend(list(_iter_rows_from_text(text)))
+
+                    candidate = _dedupe_quiz_rows(rows)
+                    if candidate:
+                        if ts is None:
+                            unique = candidate
+                            break
+                        if not fallback_rows:
+                            fallback_rows = candidate
+
+                if not unique:
+                    unique = fallback_rows
 
             if not unique:
                 full_parts: List[str] = []
