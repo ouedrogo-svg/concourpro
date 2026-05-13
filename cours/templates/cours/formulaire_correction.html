@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nouvelle correction</title>
+    <link rel="stylesheet" href="{% static 'cours/styles.css' %}">
+</head>
+<body>
+    <header class="topbar">
+        <div class="topbar-inner">
+            <span class="brand"><span class="emoji">📝</span>ConCourPro — Formateur</span>
+            <div class="top-actions">
+                <a href="{% url 'espace_formateur' %}" class="link-muted">Tableau de bord</a>
+                <a href="{% url 'liste_cours' %}" class="link-muted">Site public</a>
+                <button id="theme-toggle" class="btn-secondary" type="button">Mode sombre</button>
+            </div>
+        </div>
+    </header>
+    <main class="container">
+        <section class="card">
+            <h1>Creer une correction</h1>
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button type="submit">Enregistrer</button>
+            </form>
+            <p class="back-link"><a href="{% url 'espace_formateur' %}" class="link-muted">Retour a l’espace formateur</a></p>
+        </section>
+    </main>
+    <script>
+        const toggleButton = document.getElementById("theme-toggle");
+        const savedTheme = localStorage.getItem("theme");
+        if (savedTheme === "dark") {
+            document.documentElement.setAttribute("data-theme", "dark");
+            toggleButton.textContent = "Mode clair";
+        }
+        toggleButton.addEventListener("click", () => {
+            const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+            if (isDark) {
+                document.documentElement.removeAttribute("data-theme");
+                localStorage.setItem("theme", "light");
+                toggleButton.textContent = "Mode sombre";
+            } else {
+                document.documentElement.setAttribute("data-theme", "dark");
+                localStorage.setItem("theme", "dark");
+                toggleButton.textContent = "Mode clair";
+            }
+        });
+    </script>
+</body>
+</html>
+

@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm
 from django.contrib.auth.models import User
 
-from .models import Categorie, Cours, Mois
+from .models import Categorie, Correction, Cours, Mois
 
 
 class CategorieForm(forms.ModelForm):
@@ -23,11 +23,7 @@ class MoisForm(forms.ModelForm):
         return ordre
 
 
-class CoursForm(forms.ModelForm):
-    class Meta:
-        model = Cours
-        fields = ["titre", "description", "categorie", "mois", "fichier_pdf"]
-
+class PdfFileFormMixin:
     def clean_fichier_pdf(self):
         fichier = self.cleaned_data.get("fichier_pdf")
         if not fichier:
@@ -37,6 +33,18 @@ class CoursForm(forms.ModelForm):
             raise forms.ValidationError("Le fichier doit etre au format PDF.")
 
         return fichier
+
+
+class CoursForm(PdfFileFormMixin, forms.ModelForm):
+    class Meta:
+        model = Cours
+        fields = ["titre", "description", "categorie", "mois", "fichier_pdf"]
+
+
+class CorrectionForm(PdfFileFormMixin, forms.ModelForm):
+    class Meta:
+        model = Correction
+        fields = ["titre", "description", "categorie", "mois", "fichier_pdf"]
 
 
 class InscriptionCandidatForm(forms.Form):

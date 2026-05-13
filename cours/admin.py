@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Abonnement, Categorie, Cours, Mois, OptionAbonnement
+from .models import Abonnement, Categorie, Correction, Cours, Mois, OptionAbonnement
 
 
 @admin.register(Categorie)
@@ -18,6 +18,13 @@ class MoisAdmin(admin.ModelAdmin):
 
 @admin.register(Cours)
 class CoursAdmin(admin.ModelAdmin):
+    list_display = ("titre", "categorie", "mois", "cree_le")
+    list_filter = ("categorie", "mois")
+    search_fields = ("titre", "description")
+
+
+@admin.register(Correction)
+class CorrectionAdmin(admin.ModelAdmin):
     list_display = ("titre", "categorie", "mois", "cree_le")
     list_filter = ("categorie", "mois")
     search_fields = ("titre", "description")

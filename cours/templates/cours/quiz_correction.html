@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz — {{ correction.titre }}</title>
+    <link rel="stylesheet" href="{% static 'cours/styles.css' %}">
+</head>
+<body>
+    <header class="topbar">
+        <div class="topbar-inner">
+            <span class="brand">Quiz — {{ correction.titre }}</span>
+            <div class="top-actions">
+                <a href="{% url 'espace_candidats' %}" class="link-muted">Retour espace candidats</a>
+                <a href="{% url 'support_pdf_correction' correction.id %}" class="link-muted" target="_blank" rel="noopener">Voir le PDF</a>
+                {% if not quiz_unavailable %}
+                    <a href="{% url 'quiz_correction' correction.id %}?sync=1" class="link-muted">Recharger depuis le PDF</a>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="card">
+            <h1>{{ correction.titre }}</h1>
+            <p class="meta">Categorie: {{ correction.categorie.nom }} | Mois: {{ correction.mois.nom }}</p>
+
+            {% if messages %}
+                <ul class="messages">
+                    {% for message in messages %}
+                        <li>{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+
+            {% if quiz_unavailable %}
+                <p class="meta">Le quiz interactif n'est pas disponible pour cette correction (extraction du fichier impossible ou tableau non reconnu dans le PDF).</p>
+                <p class="actions">
+                    <a class="btn" href="{% url 'support_pdf_correction' correction.id %}" target="_blank" rel="noopener">Ouvrir le PDF de la correction</a>
+                    <a class="btn btn-secondary" href="{% url 'quiz_correction' correction.id %}?sync=1">Réessayer l'extraction</a>
+                </p>
+            {% else %}
+            {% if resultats %}
+                <div class="card quiz-score-card">
+                    <h2 style="margin-top:0;">Votre note</h2>
+                    <p class="quiz-score-line">
+                        <strong>{{ resultats.bonnes }}</strong> / <strong>{{ resultats.total }}</strong> bonnes reponses —
+                        <strong>{{ resultats.score }}%</strong>
+                    </p>
+                    <p class="meta">Les enonces et propositions sont alignes sur le PDF de correction. Reponses multiples possibles.</p>
+                    <p style="margin-bottom:0;"><a href="{% url 'quiz_correction' correction.id %}?sync=1" class="btn-secondary">Refaire le quiz</a></p>
+                </div>
+            {% endif %}
+
+            <form
+                method="post"
+                action="{% url 'quiz_correction' correction.id %}"
+                class="quiz-form"
+                style="margin-top:14px;"
+            >
+                {% csrf_token %}
+                {% if not resultats %}
+                    <p class="meta quiz-intro-hint">Cochez une ou plusieurs lettres par question, puis validez avec le bouton en bas de page.</p>
+                {% endif %}
+
+                <div class="quiz-list">
+                    {% for row in question_rows %}
+                        <div class="quiz-q-row">
+                            <div class="quiz-sheet-num">{{ row.item.ordre }}</div>
+                            <div class="quiz-sheet-main">
+                                <p class="quiz-question-line">
+                                    <span class="visually-hidden">Question {{ row.item.ordre }} : </span>
+                                    {{ row.question_display|linebreaksbr }}
+                                </p>
+                                <div class="quiz-options quiz-options-stacked" role="group" aria-label="Propositions question {{ row.item.ordre }}">
+                                    <div class="quiz-propositions-stack">
+                                        {% for prop in row.propositions %}
+                                            <label class="quiz-option quiz-option-proposition">
+                                                <input
+                                                    type="checkbox"
+                                                    name="q_{{ row.item.id }}"
+                                                    value="{{ prop.lettre }}"
+                                                    {% if resultats %}disabled{% endif %}
+                                                    {% if resultats %}
+                                                        {% for d in resultats.details %}
+                                                            {% if d.item.id == row.item.id %}
+                                                                {% if prop.lettre in d.lettres_cochees %}checked{% endif %}
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                    {% endif %}
+                                                >
+                                                <span class="quiz-prop-inline">
+                                                    <span class="quiz-prop-letter">{{ prop.lettre }}</span>
+                                                    {% if prop.texte %}
+                                                        <span class="quiz-prop-sep" aria-hidden="true"> — </span>
+                                                        <span class="quiz-prop-text">{{ prop.texte }}</span>
+                                                    {% endif %}
+                                                </span>
+                                            </label>
+                                        {% empty %}
+                                            {% for L in "ABCD"|make_list %}
+                                                <label class="quiz-option quiz-option-proposition">
+                                                    <input
+                                                        type="checkbox"
+                                                        name="q_{{ row.item.id }}"
+                                                        value="{{ L }}"
+                                                        {% if resultats %}disabled{% endif %}
+                                                    >
+                                                    <span class="quiz-prop-inline"><span class="quiz-prop-letter">{{ L }}</span></span>
+                                                </label>
+                                            {% endfor %}
+                                        {% endfor %}
+                                    </div>
+                                </div>
+
+                                {% if resultats %}
+                                    {% for d in resultats.details %}
+                                        {% if d.item.id == row.item.id %}
+                                            <p class="meta quiz-feedback">
+                                                {% if d.ok %}
+                                                    Correct.
+                                                {% else %}
+                                                    Incorrect — bonne reponse : <strong>{{ row.item.bonne_reponse }}</strong>
+                                                    {% if d.reponse_candidat != "—" %}
+                                                        (votre choix : <strong>{{ d.reponse_candidat }}</strong>)
+                                                    {% endif %}
+                                                {% endif %}
+                                            </p>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                {% if not resultats %}
+                    <p class="quiz-submit-wrap">
+                        <button type="submit" name="submit_quiz" value="1">Soumettre et voir ma note</button>
+                    </p>
+                {% endif %}
+            </form>
+            {% endif %}
+        </section>
+    </main>
+</body>
+</html>

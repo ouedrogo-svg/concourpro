@@ -44,6 +44,7 @@
                 <li><strong>{{ nb_categories }}</strong> categorie(s)</li>
                 <li><strong>{{ nb_mois }}</strong> mois</li>
                 <li><strong>{{ nb_cours }}</strong> cours</li>
+                <li><strong>{{ nb_corrections }}</strong> correction(s)</li>
             </ul>
         </section>
 
@@ -68,6 +69,10 @@
                 </a>
                 <a class="formateur-tile" href="{% url 'creer_cours' %}">
                     <span class="formateur-tile-title">Nouveau cours</span>
+                    <span class="formateur-tile-meta">PDF, categorie et mois</span>
+                </a>
+                <a class="formateur-tile" href="{% url 'creer_correction' %}">
+                    <span class="formateur-tile-title">Nouvelle correction</span>
                     <span class="formateur-tile-meta">PDF, categorie et mois</span>
                 </a>
             </div>

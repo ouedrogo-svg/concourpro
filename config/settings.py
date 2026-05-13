@@ -11,18 +11,46 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 import os
 from pathlib import Path
-from decouple import config
-import dj_database_url
+
+# Optional deps (dev convenience). The project must still run without them.
+try:
+    from decouple import config as _decouple_config  # type: ignore
+except Exception:  # pragma: no cover
+    _decouple_config = None
+
+try:
+    import dj_database_url  # type: ignore
+except Exception:  # pragma: no cover
+    dj_database_url = None
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+def config(key: str, default=None, cast=None):
+    """
+    Small wrapper compatible with python-decouple's `config`.
+    Falls back to environment variables when decouple isn't installed.
+    """
+    if _decouple_config is not None:
+        # decouple n'accepte pas cast=None
+        if cast is None:
+            return _decouple_config(key, default=default)
+        return _decouple_config(key, default=default, cast=cast)
+    raw = os.environ.get(key, default)
+    if cast is None:
+        return raw
+    try:
+        return cast(raw)
+    except Exception:
+        return default
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config('SECRET_KEY')
+SECRET_KEY = config("SECRET_KEY", default="dev-insecure-secret-key")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -82,9 +110,22 @@ WSGI_APPLICATION = 'config.wsgi.application'
     }
 }
 """
-DATABASES = {
-    'default': dj_database_url.parse(config('DATABASE_URL'))
-}
+USE_SQLITE = config("USE_SQLITE", default=DEBUG, cast=bool)
+
+if USE_SQLITE:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
+else:
+    database_url = config("DATABASE_URL", default="")
+    if dj_database_url is None:
+        raise RuntimeError(
+            "DATABASE_URL est configure mais 'dj-database-url' n'est pas installe."
+        )
+    DATABASES = {"default": dj_database_url.parse(database_url)}
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators

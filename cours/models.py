@@ -54,6 +54,60 @@ class Cours(models.Model):
         return self.titre
 
 
+class Correction(models.Model):
+    titre = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    categorie = models.ForeignKey(
+        Categorie, on_delete=models.CASCADE, related_name="corrections"
+    )
+    mois = models.ForeignKey(Mois, on_delete=models.PROTECT, related_name="corrections")
+    fichier_pdf = models.FileField(upload_to="corrections_pdfs/")
+    cree_le = models.DateTimeField(auto_now_add=True)
+    mis_a_jour_le = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-cree_le"]
+        verbose_name = "Correction"
+        verbose_name_plural = "Corrections"
+
+    def __str__(self):
+        return self.titre
+
+
+class CorrectionQuizItem(models.Model):
+    """
+    Une ligne du quiz extraite du PDF de correction.
+    La "bonne reponse" correspond a la colonne `reponses` du PDF.
+    Les propositions (texte des choix A, B, C...) viennent des colonnes
+    correspondantes du meme tableau PDF.
+    """
+
+    correction = models.ForeignKey(
+        Correction, on_delete=models.CASCADE, related_name="quiz_items"
+    )
+    ordre = models.PositiveIntegerField(default=1)
+    question = models.TextField()
+    bonne_reponse = models.TextField()
+    propositions_json = models.JSONField(
+        default=list,
+        blank=True,
+    )
+
+    class Meta:
+        ordering = ["ordre", "id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["correction", "ordre"],
+                name="correction_quiz_item_unique_ordre",
+            )
+        ]
+        verbose_name = "Question de quiz (correction)"
+        verbose_name_plural = "Questions de quiz (corrections)"
+
+    def __str__(self):
+        return f"{self.correction.titre} — Q{self.ordre}"
+
+
 class OptionAbonnement(models.Model):
     TYPE_MENSUEL = "mensuel"
     TYPE_ANNUEL = "annuel"

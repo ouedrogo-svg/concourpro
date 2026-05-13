@@ -193,10 +193,46 @@
                             <strong>{{ cours.titre }}</strong>
                             <p class="meta">Categorie: {{ cours.categorie.nom }} | Mois: {{ cours.mois.nom }}</p>
                             {% if cours.description %}<p>{{ cours.description }}</p>{% endif %}
-                            <a href="{% url 'support_pdf_cours' cours.id %}" target="_blank" rel="noopener">Ouvrir le support PDF</a>
+                            <div class="course-actions">
+                                <a href="{% url 'support_pdf_cours' cours.id %}" target="_blank" rel="noopener">Ouvrir le support PDF</a>
+                            </div>
+                            <details class="pdf-reader">
+                                <summary>Lire le cours ici</summary>
+                                <object
+                                    data="{% url 'support_pdf_cours' cours.id %}"
+                                    type="application/pdf"
+                                    class="pdf-object"
+                                >
+                                    <iframe
+                                        src="{% url 'support_pdf_cours' cours.id %}"
+                                        title="Lecture PDF - {{ cours.titre }}"
+                                        loading="lazy"
+                                    ></iframe>
+                                    <p class="meta">
+                                        Le lecteur integre n'est pas disponible sur votre navigateur.
+                                        <a href="{% url 'support_pdf_cours' cours.id %}" target="_blank" rel="noopener">Cliquez ici pour ouvrir le PDF</a>.
+                                    </p>
+                                </object>
+                            </details>
                         </li>
                     {% endfor %}
                 </ul>
+                {% if corrections_list %}
+                    <h3 style="margin-top:18px;">Corrections</h3>
+                    <ul class="course-list">
+                        {% for correction in corrections_list %}
+                            <li class="course-item">
+                                <strong>{{ correction.titre }}</strong>
+                                <p class="meta">Categorie: {{ correction.categorie.nom }} | Mois: {{ correction.mois.nom }}</p>
+                                {% if correction.description %}<p>{{ correction.description }}</p>{% endif %}
+                                <div class="course-actions correction-actions">
+                                    <a class="btn" href="{% url 'quiz_correction' correction.id %}">Quiz interactif</a>
+                                    <a href="{% url 'support_pdf_correction' correction.id %}" class="link-muted" target="_blank" rel="noopener">Voir le PDF</a>
+                                </div>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
             {% elif abonnement_actif %}
                 <p>Aucun cours disponible pour ce filtre.</p>
             {% endif %}
